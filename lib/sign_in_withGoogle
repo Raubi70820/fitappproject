@@ -1,0 +1,44 @@
+import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+class GoogleSignInService {
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Method to handle Google Sign-In
+  Future<User?> signInWithGoogle() async {
+    try {
+      // Step 1: Initiate the Google Sign-In process
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // The user canceled the sign-in
+        return null;
+      }
+
+      // Step 2: Obtain the authentication details
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // Step 3: Create a new credential for Firebase
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Step 4: Sign in to Firebase with the credential
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+
+      // Return the signed-in user
+      return userCredential.user;
+    } catch (e) {
+      debugPrint('Error during Google Sign-In: $e');
+      return null;
+    }
+  }
+
+  // Method to sign out
+  Future<void> signOut() async {
+    await _googleSignIn.signOut();
+    await _auth.signOut();
+  }
+}
